@@ -15,7 +15,7 @@ function LogoutButton() {
     return (
         <button
             className="logout-button"
-            onClick={() => logout({ logoutParams: { returnTo: window.location.origin } })}
+            onClick={() => logout({ logoutParams: { returnTo: window.location.origin + import.meta.env.BASE_URL } })}
         >
             Log Out
         </button>
