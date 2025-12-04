@@ -25,7 +25,7 @@ import { useTodoViewModel } from '../viewmodel/useTodoViewModel';
  * - Passes user ID to ViewModel for data scoping
  */
 function App() {
-  // Get authentication state from Auth0
+  // Get authentication state from Auth0 
   const { isLoading, isAuthenticated, user } = useAuth0();
 
   // Bind to the ViewModel with user ID for data scoping
