@@ -33,6 +33,7 @@ export const TodoService = {
                 completed: todo.completed,
                 due_date: todo.dueDate, // Map model property to DB column
                 user_id: userId,
+                id: todo.id
             }])
             .select();
 

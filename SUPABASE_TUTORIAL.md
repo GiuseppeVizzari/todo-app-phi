@@ -27,7 +27,7 @@ This guide explains how to integrate Supabase into a React application for data 
     *   `text`: text
     *   `completed`: boolean, default `false`
     *   `due_date`: timestamptz (optional, for due dates)
-    *   `user_id`: uuid (to link to Auth users)
+    *   `user_id`: text (changed from uuid to support Auth0 IDs)
 6.  Click **"Save"**.
 
 ## Step 3: Install Supabase Client
@@ -146,13 +146,14 @@ useEffect(() => {
 
 ## Step 8: Row Level Security (RLS) Policies
 
-## Step 8: Row Level Security (RLS) Policies
-
 The easiest way to set up RLS is to run the standard SQL commands in the **SQL Editor**.
 
 1.  Go to the **SQL Editor** (icon on the left sidebar).
 2.  Click **"New query"**.
 3.  Paste and run the following SQL commands one by one (or all together):
+
+### Option A: Using Supabase Auth (Secure)
+If you are using Supabase Authentication, use these secure policies:
 
 ```sql
 -- 1. Enable RLS
@@ -182,6 +183,27 @@ CREATE POLICY "Enable delete access for own todos"
 ON todos FOR DELETE
 TO authenticated
 USING (auth.uid() = user_id);
+```
+
+### Option B: Using External Auth (e.g., Auth0) (Development Only)
+If you are using Auth0 and storing Auth0 IDs in the `user_id` column (as TEXT), Supabase cannot verify the user identity directly. You must use a permissive policy.
+
+> [!WARNING]
+> **Security Risk**: This makes your table publicly readable/writable by anyone who has your Anon Key (which is exposed in your frontend code). This is acceptable for a personal demo but **NOT for production**.
+
+```sql
+-- 1. Change user_id to TEXT to accept Auth0 IDs
+ALTER TABLE todos ALTER COLUMN user_id TYPE text;
+
+-- 2. Enable RLS (even if permissive, it's good practice)
+ALTER TABLE todos ENABLE ROW LEVEL SECURITY;
+
+-- 3. Create a permissive policy
+CREATE POLICY "Allow access based on user_id"
+ON todos
+FOR ALL
+USING (true)
+WITH CHECK (true);
 ```
 
 **Troubleshooting the "syntax error at or near auth"**:
