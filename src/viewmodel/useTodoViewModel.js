@@ -14,31 +14,49 @@ import { TodoModel } from '../model/TodoModel';
  * 4. Acting as a bridge between the Model and the View.
  *
  * It does NOT know about the specific UI implementation (e.g., HTML, CSS).
+ *
+ * USER-SCOPED DATA:
+ * This ViewModel now accepts a userId parameter to scope todos per user.
+ * Each user's data is stored in separate localStorage keys (e.g., 'todos_user123').
+ * This ensures data isolation between different authenticated users.
  */
-export function useTodoViewModel() {
+export function useTodoViewModel(userId = 'anonymous') {
+    // Create user-specific localStorage keys
+    const todosKey = `todos_${userId}`;
+    const archivedTodosKey = `archivedTodos_${userId}`;
+
     // State to hold the list of active todos
-    // Initialize from localStorage if available
+    // Initialize from user-specific localStorage if available
     const [todos, setTodos] = useState(() => {
-        const savedTodos = localStorage.getItem('todos');
+        const savedTodos = localStorage.getItem(todosKey);
         return savedTodos ? JSON.parse(savedTodos) : [];
     });
 
     // State to hold the list of archived todos
-    // Initialize from localStorage if available
+    // Initialize from user-specific localStorage if available
     const [archivedTodos, setArchivedTodos] = useState(() => {
-        const savedArchivedTodos = localStorage.getItem('archivedTodos');
+        const savedArchivedTodos = localStorage.getItem(archivedTodosKey);
         return savedArchivedTodos ? JSON.parse(savedArchivedTodos) : [];
     });
 
-    // Save todos to localStorage whenever they change
+    // Reset state when userId changes (user logs in/out or switches accounts)
     useEffect(() => {
-        localStorage.setItem('todos', JSON.stringify(todos));
-    }, [todos]);
+        const savedTodos = localStorage.getItem(todosKey);
+        const savedArchivedTodos = localStorage.getItem(archivedTodosKey);
 
-    // Save archivedTodos to localStorage whenever they change
+        setTodos(savedTodos ? JSON.parse(savedTodos) : []);
+        setArchivedTodos(savedArchivedTodos ? JSON.parse(savedArchivedTodos) : []);
+    }, [userId, todosKey, archivedTodosKey]);
+
+    // Save todos to user-specific localStorage whenever they change
     useEffect(() => {
-        localStorage.setItem('archivedTodos', JSON.stringify(archivedTodos));
-    }, [archivedTodos]);
+        localStorage.setItem(todosKey, JSON.stringify(todos));
+    }, [todos, todosKey]);
+
+    // Save archivedTodos to user-specific localStorage whenever they change
+    useEffect(() => {
+        localStorage.setItem(archivedTodosKey, JSON.stringify(archivedTodos));
+    }, [archivedTodos, archivedTodosKey]);
 
     /**
      * Adds a new todo to the list.
