@@ -152,65 +152,48 @@ The easiest way to set up RLS is to run the standard SQL commands in the **SQL E
 2.  Click **"New query"**.
 3.  Paste and run the following SQL commands one by one (or all together):
 
-### Option A: Using Supabase Auth (Secure)
-If you are using Supabase Authentication, use these secure policies:
+### Using Supabase Auth (Recommended)
+
+Since we are using **Supabase Auth** directly, we can leverage the built-in `auth.uid()` function to secure our data. This ensures that a user can **only** see and modify their own rows.
+
+> [!IMPORTANT]
+> **Type Casting**: In this project, we defined `user_id` as `TEXT` to support potential legacy data or external providers. Therefore, we cast `auth.uid()` (which is a UUID) to `text` in our policies.
 
 ```sql
 -- 1. Enable RLS
 ALTER TABLE todos ENABLE ROW LEVEL SECURITY;
 
 -- 2. Policy for SELECT (Read)
-CREATE POLICY "Enable read access for own todos"
+-- "Users can only see their own todos"
+CREATE POLICY "Users can view their own todos"
 ON todos FOR SELECT
-TO authenticated
-USING (auth.uid() = user_id);
+USING (auth.uid()::text = user_id);
 
 -- 3. Policy for INSERT (Create)
-CREATE POLICY "Enable insert access for own todos"
+-- "Users can only create todos for themselves"
+CREATE POLICY "Users can create their own todos"
 ON todos FOR INSERT
-TO authenticated
-WITH CHECK (auth.uid() = user_id);
+WITH CHECK (auth.uid()::text = user_id);
 
 -- 4. Policy for UPDATE (Edit)
-CREATE POLICY "Enable update access for own todos"
+-- "Users can update their own todos, but cannot transfer them to others"
+CREATE POLICY "Users can update their own todos"
 ON todos FOR UPDATE
-TO authenticated
-USING (auth.uid() = user_id)
-WITH CHECK (auth.uid() = user_id);
+USING (auth.uid()::text = user_id)
+WITH CHECK (auth.uid()::text = user_id);
 
 -- 5. Policy for DELETE (Remove)
-CREATE POLICY "Enable delete access for own todos"
+-- "Users can delete their own todos"
+CREATE POLICY "Users can delete their own todos"
 ON todos FOR DELETE
-TO authenticated
-USING (auth.uid() = user_id);
+USING (auth.uid()::text = user_id);
 ```
 
-### Option B: Using External Auth (e.g., Auth0) (Development Only)
-If you are using Auth0 and storing Auth0 IDs in the `user_id` column (as TEXT), Supabase cannot verify the user identity directly. You must use a permissive policy.
+### Why not Auth0?
 
-> [!WARNING]
-> **Security Risk**: This makes your table publicly readable/writable by anyone who has your Anon Key (which is exposed in your frontend code). This is acceptable for a personal demo but **NOT for production**.
-
-```sql
--- 1. Change user_id to TEXT to accept Auth0 IDs
-ALTER TABLE todos ALTER COLUMN user_id TYPE text;
-
--- 2. Enable RLS (even if permissive, it's good practice)
-ALTER TABLE todos ENABLE ROW LEVEL SECURITY;
-
--- 3. Create a permissive policy
-CREATE POLICY "Allow access based on user_id"
-ON todos
-FOR ALL
-USING (true)
-WITH CHECK (true);
-```
-
-**Troubleshooting the "syntax error at or near auth"**:
-This error usually happens if the parentheses `()` are missing around the expression in the `USING` clause.
-*   **Incorrect**: `USING auth.uid() = user_id`
-*   **Correct**: `USING (auth.uid() = user_id)`
-
-By running the full commands above, you ensure the syntax is correct.
+While Auth0 is powerful, using it with Supabase RLS requires setting up custom JWT processing or using "permissive" policies that rely on the client to send the right ID (insecure). By using **Supabase Auth**, we get:
+1.  **Automatic Security**: RLS works out of the box with `auth.uid()`.
+2.  **No Type Mismatches**: User IDs are natively understood by the database.
+3.  **Simplicity**: One SDK for both database and authentication.
 
 Now, your app is connected to a scalable, real-time database with secure data access!

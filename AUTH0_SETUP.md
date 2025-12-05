@@ -2,6 +2,13 @@
 
 This todo app now includes Auth0 authentication! Follow these steps to get started.
 
+> [!NOTE]
+> **Auth0 vs Supabase Auth**: Auth0 is an excellent, industry-standard authentication provider. However, when using it with backend-as-a-service platforms like **Supabase**, integrating user management and security (Row Level Security) can be complex.
+>
+> Supabase RLS relies on its own `auth.uid()`, which doesn't automatically map to Auth0 user IDs without custom JWT processing or complex synchronization. For this project, we found that **Supabase Native Auth** provides a much more seamless experience for securing user data.
+>
+> This guide remains here for reference if you prefer to use Auth0 as a standalone provider.
+
 ## Quick Start
 
 ### 1. Install Dependencies
