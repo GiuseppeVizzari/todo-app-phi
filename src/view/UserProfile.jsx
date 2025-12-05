@@ -1,33 +1,34 @@
 import React from 'react';
-import { useAuth0 } from '@auth0/auth0-react';
-import LogoutButton from './LogoutButton.jsx';
+import { supabase } from '../supabaseClient';
+// import LogoutButton from './LogoutButton.jsx'; // Inlined for simplicity
 
 /**
  * UserProfile.jsx
  *
  * VIEW LAYER - Authentication Component
  *
- * Displays the authenticated user's profile information including:
- * - User avatar (if available)
- * - User name
- * - User email
- * - Logout button
+ * Displays the authenticated user's profile information.
+ * - Shows Email from Supabase session
+ * - Handles Logout
  */
-function UserProfile() {
-    const { user } = useAuth0();
+function UserProfile({ session }) {
+    const user = session?.user;
+
+    const handleLogout = async () => {
+        await supabase.auth.signOut();
+    };
 
     return (
         <div className="user-profile">
             <div className="user-info">
-                {user?.picture && (
-                    <img src={user.picture} alt={user?.name} className="user-avatar" />
-                )}
+                {/* Supabase user object has email but no picture by default unless metadata */}
                 <div className="user-details">
-                    <p className="user-name">{user?.name}</p>
                     <p className="user-email">{user?.email}</p>
                 </div>
             </div>
-            <LogoutButton />
+            <button className="logout-button" onClick={handleLogout}>
+                Log Out
+            </button>
         </div>
     );
 }

@@ -1,5 +1,5 @@
-import React from 'react';
-import { useAuth0 } from '@auth0/auth0-react';
+import React, { useState, useEffect } from 'react';
+import { supabase } from '../supabaseClient';
 import './App.css';
 import TodoList from './TodoList.jsx';
 import Archive from './Archive.jsx';
@@ -18,19 +18,38 @@ import { useTodoViewModel } from '../viewmodel/useTodoViewModel';
  * 2. Binding to the ViewModel to get state and methods.
  * 3. Passing data and commands to child components.
  *
- * Now includes Auth0 authentication:
- * - Shows loading state while Auth0 initializes
- * - Shows login button when user is not authenticated
+ * Now includes Supabase Authentication:
+ * - Manages auth session state
+ * - Shows login screen when no session exists
  * - Shows user profile and todo list when authenticated
  * - Passes user ID to ViewModel for data scoping
  */
 function App() {
-  // Get authentication state from Auth0 
-  const { isLoading, isAuthenticated, user } = useAuth0();
+  const [session, setSession] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Check active session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setLoading(false);
+    });
+
+    // Listen for auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      setLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   // Bind to the ViewModel with user ID for data scoping
-  // Use 'anonymous' as userId when not authenticated
-  const userId = isAuthenticated ? user.sub : 'anonymous';
+  const userId = session?.user?.id || 'anonymous';
+  // Note: We might want to block 'anonymous' if strictly requiring auth, 
+  // but for ViewModel initialization it's fine.
 
   const {
     todos,
@@ -44,8 +63,8 @@ function App() {
     deleteArchivedTodo,
   } = useTodoViewModel(userId);
 
-  // Show loading state while Auth0 is initializing
-  if (isLoading) {
+  // Show loading state while Auth initialization
+  if (loading) {
     return (
       <div className="app-container">
         <div className="loading-container">
@@ -57,7 +76,7 @@ function App() {
   }
 
   // Show login screen when not authenticated
-  if (!isAuthenticated) {
+  if (!session) {
     return (
       <div className="app-container">
         <div className="login-container">
@@ -74,7 +93,7 @@ function App() {
     <div className="app-container">
       <div className="app-header">
         <h1>Todo List</h1>
-        <UserProfile />
+        <UserProfile key={session.user.id} session={session} />
       </div>
 
       <div className="todo-section">
