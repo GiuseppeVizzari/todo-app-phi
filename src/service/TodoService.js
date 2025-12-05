@@ -31,9 +31,9 @@ export const TodoService = {
             .insert([{
                 text: todo.text,
                 completed: todo.completed,
-                due_date: todo.dueDate, // Map model property to DB column
-                user_id: userId,
-                id: todo.id
+                due_date: todo.dueDate || null, // Map model property to DB column. Empty string -> null
+                user_id: userId
+                // id: todo.id // REMOVED: Let Supabase generate the ID
             }])
             .select();
 
@@ -55,7 +55,7 @@ export const TodoService = {
             .update({
                 text: todo.text,
                 completed: todo.completed,
-                due_date: todo.dueDate
+                due_date: todo.dueDate || null
             })
             .eq('id', todo.id);
 
