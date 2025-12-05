@@ -17,10 +17,13 @@ function LoginButton() {
     const handleLogin = async (e) => {
         e.preventDefault();
         setLoading(true);
+        // Construct redirect URL that includes the GitHub Pages subdirectory
+        const redirectUrl = window.location.origin + import.meta.env.BASE_URL;
+
         const { error } = await supabase.auth.signInWithOtp({
             email,
             options: {
-                emailRedirectTo: window.location.origin,
+                emailRedirectTo: redirectUrl,
             },
         });
 
